@@ -411,8 +411,8 @@ async function updateName(prevState, formData) {
 export const testConfig: TestConfig = {
   title: "Senior React Engineer Assessment",
   description:
-    "A modern assessment covering React fundamentals and hooks, React 19 features, Server Components & frameworks, state management (Redux/RTK/Saga), data fetching, and AI integration.",
-  timeLimit: 23, // ~1 minute per question
+    "",
+  timeLimit: 20, // ~1 minute per question
   totalQuestions: 23,
   passingScore: 70,
   submissionEmails: ["rmasefieldreapit@gmail.com"],
