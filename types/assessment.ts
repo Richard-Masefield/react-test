@@ -7,7 +7,18 @@ export interface Question {
   correctAnswer: string | number
   explanation: string
   difficulty: "easy" | "medium" | "hard"
-  category: "react-fundamentals" | "hooks" | "performance" | "best-practices" | "modern-web" | "lifecycle"
+  category:
+    | "react-fundamentals"
+    | "hooks"
+    | "performance"
+    | "best-practices"
+    | "modern-web"
+    | "lifecycle"
+    | "react-19"
+    | "frameworks"
+    | "state-management"
+    | "data-fetching"
+    | "ai"
 }
 
 export interface TestSession {

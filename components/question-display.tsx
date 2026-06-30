@@ -26,13 +26,13 @@ export function QuestionDisplay({ question, selectedAnswer, onAnswerChange }: Qu
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-success/10 text-success border-success/30"
       case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-warning/15 text-warning-foreground border-warning/40"
       case "hard":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-destructive/10 text-destructive border-destructive/30"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-muted text-muted-foreground border-border"
     }
   }
 
@@ -44,6 +44,11 @@ export function QuestionDisplay({ question, selectedAnswer, onAnswerChange }: Qu
       "best-practices": "Best Practices",
       "modern-web": "Modern Web",
       lifecycle: "Component Lifecycle",
+      "react-19": "React 19",
+      frameworks: "Frameworks & RSC",
+      "state-management": "State Management",
+      "data-fetching": "Data Fetching",
+      ai: "AI Integration",
     }
     return labels[category] || category
   }
@@ -128,24 +133,28 @@ export function QuestionDisplay({ question, selectedAnswer, onAnswerChange }: Qu
           >
             <div
               className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                selectedAnswer === "true" ? "bg-green-50 border-green-300 shadow-sm" : "border-border hover:bg-muted/50"
+                selectedAnswer === "true"
+                  ? "bg-success/10 border-success/40 shadow-sm"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               <RadioGroupItem value="true" id="true-option" />
               <Label htmlFor="true-option" className="flex items-center gap-2 cursor-pointer flex-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className={selectedAnswer === "true" ? "font-medium text-green-800" : ""}>True</span>
+                <CheckCircle className="h-4 w-4 text-success" />
+                <span className={selectedAnswer === "true" ? "font-medium text-success" : ""}>True</span>
               </Label>
             </div>
             <div
               className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                selectedAnswer === "false" ? "bg-red-50 border-red-300 shadow-sm" : "border-border hover:bg-muted/50"
+                selectedAnswer === "false"
+                  ? "bg-destructive/10 border-destructive/40 shadow-sm"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               <RadioGroupItem value="false" id="false-option" />
               <Label htmlFor="false-option" className="flex items-center gap-2 cursor-pointer flex-1">
-                <XCircle className="h-4 w-4 text-red-600" />
-                <span className={selectedAnswer === "false" ? "font-medium text-red-800" : ""}>False</span>
+                <XCircle className="h-4 w-4 text-destructive" />
+                <span className={selectedAnswer === "false" ? "font-medium text-destructive" : ""}>False</span>
               </Label>
             </div>
           </RadioGroup>
@@ -172,9 +181,9 @@ export function QuestionDisplay({ question, selectedAnswer, onAnswerChange }: Qu
 
       {/* Answer Status */}
       {selectedAnswer !== undefined && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <span className="text-sm text-green-700 font-medium">Answer saved</span>
+        <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/30 rounded-lg">
+          <CheckCircle className="h-4 w-4 text-success" />
+          <span className="text-sm text-success font-medium">Answer saved</span>
         </div>
       )}
     </div>

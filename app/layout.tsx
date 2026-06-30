@@ -5,8 +5,9 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Senior React Engineer Assessment',
+  description:
+    'A modern, timed assessment covering React 19, hooks, Server Components, state management, data fetching, and AI integration.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background">
       <body className={`font-sans antialiased ${GeistSans.variable} ${GeistMono.variable}`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

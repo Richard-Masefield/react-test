@@ -42,12 +42,16 @@ export function IntroductionScreen({ config, onStartTest }: IntroductionScreenPr
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">{config.title}</h1>
-          <p className="text-muted-foreground text-lg">{config.description}</p>
+        <div className="text-center space-y-3">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Technical Assessment
+          </span>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground text-balance">{config.title}</h1>
+          <p className="text-muted-foreground text-lg text-pretty">{config.description}</p>
         </div>
 
         {/* Test Information Card */}
@@ -92,7 +96,8 @@ export function IntroductionScreen({ config, onStartTest }: IntroductionScreenPr
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent font-medium">•</span>
-                Questions cover React fundamentals, hooks, performance, and modern web practices
+                Questions span React fundamentals & hooks, React 19, Server Components, state management
+                (Redux/RTK/Saga), data fetching, and AI integration
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent font-medium">•</span>
@@ -112,12 +117,12 @@ export function IntroductionScreen({ config, onStartTest }: IntroductionScreenPr
 
         {/* Warning Card */}
         <Card className="bg-destructive/10 border-destructive/20">
-          <CardContent className="py-1">
+          <CardContent className="py-4">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
               <div className="space-y-1">
-                <p className="font-medium text-slate-900">Important Notice</p>
-                <p className="text-sm text-slate-800">
+                <p className="font-medium text-foreground">Important Notice</p>
+                <p className="text-sm text-muted-foreground">
                   Once you submit your test, you will not be able to make any changes. Make sure to review your answers
                   before final submission.
                 </p>

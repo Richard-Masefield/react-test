@@ -53,7 +53,7 @@ export function TestTimer({ startTime, timeLimit, onTimeUp }: TestTimerProps) {
         isCriticalTime
           ? "bg-destructive/10 border-destructive"
           : isLowTime
-            ? "bg-orange-50 border-orange-200"
+            ? "bg-warning/15 border-warning/40"
             : "bg-card border-border"
       }`}
     >
@@ -62,13 +62,13 @@ export function TestTimer({ startTime, timeLimit, onTimeUp }: TestTimerProps) {
           {isCriticalTime ? (
             <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
           ) : (
-            <Clock className={`h-5 w-5 ${isLowTime ? "text-orange-500" : "text-accent"}`} />
+            <Clock className={`h-5 w-5 ${isLowTime ? "text-warning-foreground" : "text-accent"}`} />
           )}
           <div>
             <p className="text-sm font-medium">Time Remaining</p>
             <p
               className={`text-lg font-mono font-bold ${
-                isCriticalTime ? "text-destructive" : isLowTime ? "text-orange-600" : "text-foreground"
+                isCriticalTime ? "text-destructive" : isLowTime ? "text-warning-foreground" : "text-foreground"
               }`}
             >
               {formatTime(timeRemaining)}

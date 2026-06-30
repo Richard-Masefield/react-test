@@ -50,6 +50,11 @@ export function TestResults({ session, questions, score, correctAnswers, onStart
       "best-practices": "Best Practices",
       "modern-web": "Modern Web",
       lifecycle: "Component Lifecycle",
+      "react-19": "React 19",
+      frameworks: "Frameworks & RSC",
+      "state-management": "State Management",
+      "data-fetching": "Data Fetching",
+      ai: "AI Integration",
     }
     return names[category] || category
   }
@@ -104,12 +109,12 @@ export function TestResults({ session, questions, score, correctAnswers, onStart
           <div className="text-center space-y-4">
             <div className="flex justify-center">
               {isPassed ? (
-                <div className="p-4 bg-green-100 rounded-full">
-                  <Trophy className="h-12 w-12 text-green-600" />
+                <div className="p-4 bg-success/10 rounded-full">
+                  <Trophy className="h-12 w-12 text-success" />
                 </div>
               ) : (
-                <div className="p-4 bg-red-100 rounded-full">
-                  <XCircle className="h-12 w-12 text-red-600" />
+                <div className="p-4 bg-destructive/10 rounded-full">
+                  <XCircle className="h-12 w-12 text-destructive" />
                 </div>
               )}
             </div>
@@ -117,7 +122,7 @@ export function TestResults({ session, questions, score, correctAnswers, onStart
               <h1 className="text-3xl font-bold text-foreground">
                 Test {isPassed ? "Completed Successfully!" : "Completed"}
               </h1>
-              <p className="text-muted-foreground mt-2">Thank you for taking the React Senior Developer Assessment</p>
+              <p className="text-muted-foreground mt-2">Thank you for taking the Senior React Engineer Assessment</p>
             </div>
           </div>
 
@@ -180,17 +185,17 @@ export function TestResults({ session, questions, score, correctAnswers, onStart
           </Card>
 
           {/* Submission Status */}
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-success/10 border-success/30">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-green-600 mt-0.5" />
+                <Mail className="h-5 w-5 text-success mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-medium text-green-800">Test Submitted Successfully</p>
-                  <p className="text-sm text-green-700">
+                  <p className="font-medium text-foreground">Test Submitted Successfully</p>
+                  <p className="text-sm text-muted-foreground">
                     Your results have been automatically sent to the hiring team. You should receive a confirmation
                     email shortly.
                   </p>
-                  <div className="text-xs text-green-600 mt-2">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Submitted on {session.endTime?.toLocaleString() || new Date().toLocaleString()}
                   </div>
                 </div>

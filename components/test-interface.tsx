@@ -87,7 +87,7 @@ export function TestInterface({ session, questions, onUpdateSession, onSubmitTes
         <div className="max-w-6xl mx-auto p-4">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-card-foreground">React Senior Developer Assessment</h1>
+              <h1 className="text-xl font-bold text-card-foreground">Senior React Engineer Assessment</h1>
               <p className="text-sm text-muted-foreground">Candidate: {session.candidateName}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
