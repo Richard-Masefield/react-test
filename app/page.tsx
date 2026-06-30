@@ -9,15 +9,9 @@ import type { TestSession } from "@/types/assessment"
 
 type AppState = "intro" | "testing" | "results"
 
-interface TestResultData {
-  score: number
-  correctAnswers: number
-}
-
 export default function Home() {
   const [appState, setAppState] = useState<AppState>("intro")
   const [testSession, setTestSession] = useState<TestSession | null>(null)
-  const [testResults, setTestResults] = useState<TestResultData | null>(null)
 
   const handleStartTest = (candidateName: string, candidateEmail: string) => {
     const newSession: TestSession = {
@@ -67,10 +61,8 @@ export default function Home() {
       const result = await response.json()
 
       if (result.success) {
-        setTestResults({
-          score: result.score,
-          correctAnswers: result.correctAnswers,
-        })
+        // Note: the score is intentionally NOT surfaced to the candidate.
+        // Detailed results are only delivered to the hiring team via email.
         setTestSession(finalSession)
         setAppState("results")
       } else {
@@ -85,7 +77,6 @@ export default function Home() {
 
   const handleStartNewTest = () => {
     setTestSession(null)
-    setTestResults(null)
     setAppState("intro")
   }
 
@@ -104,16 +95,8 @@ export default function Home() {
     )
   }
 
-  if (appState === "results" && testSession && testResults) {
-    return (
-      <TestResults
-        session={testSession}
-        questions={reactQuestions}
-        score={testResults.score}
-        correctAnswers={testResults.correctAnswers}
-        onStartNewTest={handleStartNewTest}
-      />
-    )
+  if (appState === "results" && testSession) {
+    return <TestResults session={testSession} questions={reactQuestions} onStartNewTest={handleStartNewTest} />
   }
 
   return null

@@ -30,6 +30,8 @@ export interface TestSession {
   timeLimit: number // in minutes
   currentQuestionIndex: number
   answers: Record<string, string | number>
+  // Time spent on each question, keyed by question id, in milliseconds
+  questionTimes?: Record<string, number>
   isSubmitted: boolean
   score?: number
 }

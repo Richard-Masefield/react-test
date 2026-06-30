@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Clock, FileText } from "lucide-react"
+import { ThemeToggle } from "./theme-toggle"
 import type { TestConfig } from "@/types/assessment"
 
 interface IntroductionScreenProps {
@@ -42,7 +43,10 @@ export function IntroductionScreen({ config, onStartTest }: IntroductionScreenPr
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-10">
+    <div className="relative min-h-screen bg-background flex items-center justify-center p-4 py-10">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">

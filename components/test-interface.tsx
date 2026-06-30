@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { TestTimer } from "./test-timer"
 import { TestProgress } from "./test-progress"
 import { QuestionDisplay } from "./question-display"
+import { ThemeToggle } from "./theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -33,6 +34,22 @@ export function TestInterface({ session, questions, onUpdateSession, onSubmitTes
   const currentQuestion = questions[session.currentQuestionIndex]
   const answeredQuestions = Object.keys(session.answers).length
 
+  // Accumulated time spent per question (ms), seeded from any existing session data
+  const questionTimesRef = useRef<Record<string, number>>({ ...(session.questionTimes ?? {}) })
+  // The question currently being viewed and when the view started
+  const activeQuestionRef = useRef<{ id: string; startedAt: number }>({
+    id: currentQuestion.id,
+    startedAt: Date.now(),
+  })
+
+  // Add the time spent on the active question to the running totals
+  const flushActiveTime = useCallback(() => {
+    const { id, startedAt } = activeQuestionRef.current
+    const elapsed = Date.now() - startedAt
+    questionTimesRef.current[id] = (questionTimesRef.current[id] ?? 0) + elapsed
+    activeQuestionRef.current = { id, startedAt: Date.now() }
+  }, [])
+
   const handleAnswerChange = useCallback(
     (questionId: string, answer: string | number) => {
       const updatedSession = {
@@ -54,13 +71,18 @@ export function TestInterface({ session, questions, onUpdateSession, onSubmitTes
           ? Math.max(0, session.currentQuestionIndex - 1)
           : Math.min(questions.length - 1, session.currentQuestionIndex + 1)
 
+      // Record time on the question we're leaving, then start tracking the new one
+      flushActiveTime()
+      activeQuestionRef.current = { id: questions[newIndex].id, startedAt: Date.now() }
+
       const updatedSession = {
         ...session,
         currentQuestionIndex: newIndex,
+        questionTimes: { ...questionTimesRef.current },
       }
       onUpdateSession(updatedSession)
     },
-    [session, questions.length, onUpdateSession],
+    [session, questions, onUpdateSession, flushActiveTime],
   )
 
   const handleTimeUp = useCallback(() => {
@@ -68,13 +90,15 @@ export function TestInterface({ session, questions, onUpdateSession, onSubmitTes
   }, [])
 
   const handleSubmitTest = useCallback(() => {
+    flushActiveTime()
     const finalSession = {
       ...session,
       endTime: new Date(),
       isSubmitted: true,
+      questionTimes: { ...questionTimesRef.current },
     }
     onSubmitTest(finalSession)
-  }, [session, onSubmitTest])
+  }, [session, onSubmitTest, flushActiveTime])
 
   const canGoPrev = session.currentQuestionIndex > 0
   const canGoNext = session.currentQuestionIndex < questions.length - 1
@@ -90,13 +114,14 @@ export function TestInterface({ session, questions, onUpdateSession, onSubmitTes
               <h1 className="text-xl font-bold text-card-foreground">Senior React Engineer Assessment</h1>
               <p className="text-sm text-muted-foreground">Candidate: {session.candidateName}</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto sm:items-center">
               <TestTimer startTime={session.startTime} timeLimit={session.timeLimit} onTimeUp={handleTimeUp} />
               <TestProgress
                 currentQuestion={session.currentQuestionIndex}
                 totalQuestions={questions.length}
                 answeredQuestions={answeredQuestions}
               />
+              <ThemeToggle />
             </div>
           </div>
         </div>

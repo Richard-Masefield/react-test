@@ -51,19 +51,33 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Sending to emails:", submissionEmails)
 
     // Calculate detailed results
-    const results = questions.map((question) => {
+    const results = questions.map((question, index) => {
       const userAnswer = session.answers[question.id]
       const isCorrect = userAnswer === question.correctAnswer
+      const timeSpentMs = session.questionTimes?.[question.id] ?? 0
+
+      // Resolve the human-readable answer text for choice-based questions
+      const resolveAnswer = (value: string | number | undefined) => {
+        if (value === undefined || value === null || value === "") return "Not answered"
+        if ((question.type === "multiple-choice" || question.type === "code-review") && question.options) {
+          const idx = typeof value === "number" ? value : Number.parseInt(value as string, 10)
+          return Number.isNaN(idx) ? String(value) : (question.options[idx] ?? String(value))
+        }
+        return String(value)
+      }
 
       return {
+        number: index + 1,
         questionId: question.id,
         question: question.question,
         userAnswer,
-        correctAnswer: question.correctAnswer,
+        userAnswerText: resolveAnswer(userAnswer),
+        correctAnswerText: resolveAnswer(question.correctAnswer),
         isCorrect,
         explanation: question.explanation,
         category: question.category,
         difficulty: question.difficulty,
+        timeSpentMs,
       }
     })
 
@@ -71,21 +85,22 @@ export async function POST(request: NextRequest) {
     const totalQuestions = questions.length
     const finalScore = Math.round((correctAnswers / totalQuestions) * 100)
 
-    // Create email content
+    // Create email content (HTML + plain-text fallback)
     const emailContent = generateEmailContent(session, results, finalScore)
 
     const emailConfig = {
       from: "React Assessment <onboarding@resend.dev>", // Using Resend's default domain for testing
       to: submissionEmails,
-      subject: `React Senior Developer Assessment - ${session.candidateName}`,
-      text: emailContent,
+      subject: `Assessment Result: ${session.candidateName} — ${finalScore}% (${finalScore >= 70 ? "Pass" : "Fail"})`,
+      html: emailContent.html,
+      text: emailContent.text,
     }
 
     console.log("[v0] Email configuration:", {
       from: emailConfig.from,
       to: emailConfig.to,
       subject: emailConfig.subject,
-      contentLength: emailContent.length,
+      contentLength: emailContent.html.length,
     })
 
     try {
@@ -125,67 +140,175 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateEmailContent(session: TestSession, results: any[], score: number): string {
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function formatCategory(category: string): string {
+  return category.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+function formatDuration(ms: number): string {
+  if (!ms || ms < 1000) return "<1s"
+  const totalSeconds = Math.round(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
+}
+
+function generateEmailContent(session: TestSession, results: any[], score: number): { html: string; text: string } {
   const correctAnswers = results.filter((r) => r.isCorrect).length
   const totalQuestions = results.length
+  const answered = results.filter((r) => r.userAnswer !== undefined && r.userAnswer !== "").length
+  const passed = score >= 70
 
   const startTime = new Date(session.startTime)
   const endTime = session.endTime ? new Date(session.endTime) : null
-
   const testDuration =
     endTime && startTime ? Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60)) : session.timeLimit
+  const totalTimeMs = results.reduce((sum, r) => sum + (r.timeSpentMs ?? 0), 0)
+  const avgTimeMs = totalQuestions > 0 ? totalTimeMs / totalQuestions : 0
 
   const categoryBreakdown = results.reduce(
     (acc, result) => {
-      if (!acc[result.category]) {
-        acc[result.category] = { correct: 0, total: 0 }
-      }
+      if (!acc[result.category]) acc[result.category] = { correct: 0, total: 0 }
       acc[result.category].total++
-      if (result.isCorrect) {
-        acc[result.category].correct++
-      }
+      if (result.isCorrect) acc[result.category].correct++
       return acc
     },
     {} as Record<string, { correct: number; total: number }>,
   )
 
-  return `
-React Senior Developer Assessment Results
+  const accent = passed ? "#15803d" : "#b91c1c"
 
-Candidate Information:
-- Name: ${session.candidateName}
-- Email: ${session.candidateEmail}
-- Test Date: ${startTime.toLocaleDateString()}
-- Test Duration: ${testDuration} minutes
+  // ---- HTML version ----
+  const statRow = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:separate;border-spacing:8px;">
+      <tr>
+        ${[
+          ["Score", `${score}%`],
+          ["Correct", `${correctAnswers}/${totalQuestions}`],
+          ["Answered", `${answered}/${totalQuestions}`],
+          ["Duration", `${testDuration}m`],
+        ]
+          .map(
+            ([label, value]) => `
+          <td align="center" style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:14px 8px;">
+            <div style="font-size:20px;font-weight:700;color:#0f172a;">${value}</div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">${label}</div>
+          </td>`,
+          )
+          .join("")}
+      </tr>
+    </table>`
 
-Overall Results:
-- Score: ${score}% (${correctAnswers}/${totalQuestions})
-- Status: ${score >= 70 ? "PASSED" : "FAILED"}
+  const categoryRows = Object.entries(categoryBreakdown)
+    .map(([category, stats]) => {
+      const pct = Math.round((stats.correct / stats.total) * 100)
+      return `
+        <tr>
+          <td style="padding:6px 0;color:#334155;">${escapeHtml(formatCategory(category))}</td>
+          <td align="right" style="padding:6px 0;color:#0f172a;font-weight:600;">${stats.correct}/${stats.total} (${pct}%)</td>
+        </tr>`
+    })
+    .join("")
 
-Category Breakdown:
+  const questionRows = results
+    .map((r) => {
+      const badge = r.isCorrect
+        ? `<span style="color:#15803d;font-weight:700;">Correct</span>`
+        : `<span style="color:#b91c1c;font-weight:700;">Incorrect</span>`
+      return `
+        <tr><td style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px;">
+            Q${r.number} · ${escapeHtml(formatCategory(r.category))} · ${escapeHtml(r.difficulty)} · ⏱ ${formatDuration(r.timeSpentMs)}
+          </div>
+          <div style="font-weight:600;color:#0f172a;margin-bottom:8px;">${escapeHtml(r.question)}</div>
+          <div style="font-size:14px;color:#334155;">Candidate answer: ${escapeHtml(r.userAnswerText)} &nbsp;—&nbsp; ${badge}</div>
+          <div style="font-size:14px;color:#334155;margin-top:2px;">Correct answer: ${escapeHtml(r.correctAnswerText)}</div>
+          ${
+            !r.isCorrect
+              ? `<div style="font-size:13px;color:#64748b;margin-top:8px;border-top:1px solid #f1f5f9;padding-top:8px;">${escapeHtml(r.explanation)}</div>`
+              : ""
+          }
+        </td></tr>
+        <tr><td style="height:10px;"></td></tr>`
+    })
+    .join("")
+
+  const html = `
+  <div style="background:#f1f5f9;padding:24px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr><td style="background:#0f172a;padding:24px 28px;">
+            <div style="color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Senior React Engineer Assessment</div>
+            <div style="color:#ffffff;font-size:22px;font-weight:700;margin-top:4px;">${escapeHtml(session.candidateName)}</div>
+            <div style="color:#cbd5e1;font-size:14px;margin-top:2px;">${escapeHtml(session.candidateEmail)}</div>
+          </td></tr>
+          <tr><td style="padding:24px 28px;">
+            <div style="display:inline-block;background:${accent};color:#ffffff;font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;">
+              ${passed ? "PASSED" : "FAILED"} · ${score}%
+            </div>
+            ${statRow}
+            <div style="font-size:13px;color:#64748b;margin-top:4px;">
+              Submitted ${escapeHtml(endTime ? endTime.toLocaleString() : new Date().toLocaleString())} ·
+              Total active time ${formatDuration(totalTimeMs)} · Avg ${formatDuration(avgTimeMs)}/question
+            </div>
+
+            <h3 style="font-size:15px;color:#0f172a;margin:24px 0 8px;">Category Breakdown</h3>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">${categoryRows}</table>
+
+            <h3 style="font-size:15px;color:#0f172a;margin:24px 0 12px;">Question-by-Question</h3>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${questionRows}</table>
+          </td></tr>
+          <tr><td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e5e7eb;">
+            <div style="font-size:12px;color:#94a3b8;">Automatically generated by the Senior React Engineer Assessment system.</div>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </div>`.trim()
+
+  // ---- Plain-text fallback ----
+  const text = `
+SENIOR REACT ENGINEER ASSESSMENT — RESULTS
+
+Candidate: ${session.candidateName} <${session.candidateEmail}>
+Submitted: ${endTime ? endTime.toLocaleString() : new Date().toLocaleString()}
+
+RESULT: ${passed ? "PASSED" : "FAILED"} — ${score}% (${correctAnswers}/${totalQuestions} correct)
+Answered: ${answered}/${totalQuestions}
+Duration: ${testDuration} min (active ${formatDuration(totalTimeMs)}, avg ${formatDuration(avgTimeMs)}/question)
+
+CATEGORY BREAKDOWN
 ${Object.entries(categoryBreakdown)
   .map(([category, stats]) => {
-    const categoryScore = Math.round((stats.correct / stats.total) * 100)
-    const categoryName = category.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    return `- ${categoryName}: ${categoryScore}% (${stats.correct}/${stats.total})`
+    const pct = Math.round((stats.correct / stats.total) * 100)
+    return `  ${formatCategory(category)}: ${stats.correct}/${stats.total} (${pct}%)`
   })
   .join("\n")}
 
-Detailed Results:
+QUESTION-BY-QUESTION
 ${results
   .map(
-    (result, index) => `
-Question ${index + 1}: ${result.isCorrect ? "✓" : "✗"}
-Category: ${result.category.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-Difficulty: ${result.difficulty.charAt(0).toUpperCase() + result.difficulty.slice(1)}
-Question: ${result.question}
-User Answer: ${result.userAnswer}
-Correct Answer: ${result.correctAnswer}
-${!result.isCorrect ? `Explanation: ${result.explanation}` : ""}
-`,
+    (r) =>
+      `Q${r.number} [${r.isCorrect ? "CORRECT" : "INCORRECT"}] ${formatCategory(r.category)} · ${r.difficulty} · time ${formatDuration(
+        r.timeSpentMs,
+      )}
+  ${r.question}
+  Candidate: ${r.userAnswerText}
+  Correct:   ${r.correctAnswerText}${r.isCorrect ? "" : `\n  Why: ${r.explanation}`}`,
   )
-  .join("\n---\n")}
+  .join("\n\n")}
 
-This assessment was automatically generated and submitted through the React Senior Developer Assessment System.
+Automatically generated by the Senior React Engineer Assessment system.
   `.trim()
+
+  return { html, text }
 }
